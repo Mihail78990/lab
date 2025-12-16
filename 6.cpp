@@ -41,6 +41,21 @@ public:
         delete[] data;
     }
 
+    // Оператор присваивания
+    Array& operator=(const Array& other) {
+        if (this != &other) {
+            delete[] data;
+            size = other.size;
+            if (other.data) {
+                data = new unsigned char[size];
+                memcpy(data, other.data, size);
+            } else {
+                data = nullptr;
+            }
+        }
+        return *this;
+    }
+
     // Оператор индексирования
     unsigned char& operator[](int index) {
         if (index >= 0 && index < size) {
@@ -80,15 +95,18 @@ public:
         return result;
     }
 
-    // Вывод массива
-    virtual void display() const {
-        cout << "Массив [" << size << "]: ";
-        for (int i = 0; i < size; i++) {
-            cout << (int)data[i] << " ";
-        }
-        cout << endl;
-    }
+    // Дружественная функция для вывода
+    friend ostream& operator<<(ostream& os, const Array& arr);
 };
+
+// Перегрузка оператора вывода для Array
+ostream& operator<<(ostream& os, const Array& arr) {
+    os << "Массив [" << arr.size << "]: ";
+    for (int i = 0; i < arr.size; i++) {
+        os << (int)arr.data[i] << " ";
+    }
+    return os;
+}
 
 // Производный класс Fraction
 class Fraction : public Array {
@@ -148,18 +166,25 @@ public:
         }
     }
 
-    void display() const override {
-        cout << "Дробь [" << size << "], знак: " << (sign ? "-" : "+")
-             << ", дробных цифр: " << decimalDigits << ": ";
-        for (int i = size - 1; i >= 0; i--) {
-            cout << (int)data[i];
-            if (i == decimalDigits && decimalDigits > 0) {
-                cout << ".";
-            }
-        }
-        cout << endl;
-    }
+    bool getSign() const { return sign; }
+    int getDecimalDigits() const { return decimalDigits; }
+    
+    // Дружественная функция для вывода
+    friend ostream& operator<<(ostream& os, const Fraction& frac);
 };
+
+// Перегрузка оператора вывода для Fraction
+ostream& operator<<(ostream& os, const Fraction& frac) {
+    os << "Дробь [" << frac.size << "], знак: " << (frac.sign ? "-" : "+")
+       << ", дробных цифр: " << frac.decimalDigits << ": ";
+    for (int i = frac.size - 1; i >= 0; i--) {
+        os << (int)frac.data[i];
+        if (i == frac.decimalDigits && frac.decimalDigits > 0) {
+            os << ".";
+        }
+    }
+    return os;
+}
 
 // Производный класс BitString
 class BitString : public Array {
@@ -222,15 +247,20 @@ public:
         
         return result;
     }
-
-    void display() const override {
-        cout << "Битовая строка [" << size << "]: ";
-        for (int i = size - 1; i >= 0; i--) {
-            cout << (int)data[i];
-        }
-        cout << " (двоичное)" << endl;
-    }
+    
+    // Дружественная функция для вывода
+    friend ostream& operator<<(ostream& os, const BitString& bitStr);
 };
+
+// Перегрузка оператора вывода для BitString
+ostream& operator<<(ostream& os, const BitString& bitStr) {
+    os << "Битовая строка [" << bitStr.size << "]: ";
+    for (int i = bitStr.size - 1; i >= 0; i--) {
+        os << (int)bitStr.data[i];
+    }
+    os << " (двоичное)";
+    return os;
+}
 
 int main() {
     cout << "=== Демонстрация виртуальных методов ===\n\n";
@@ -257,12 +287,12 @@ int main() {
 
     // Вывод созданных объектов
     cout << "Исходные объекты:\n";
-    array1.display();
-    array2.display();
-    fraction1.display();
-    fraction2.display();
-    bitStr1.display();
-    bitStr2.display();
+    cout << array1 << endl;
+    cout << array2 << endl;
+    cout << fraction1 << endl;
+    cout << fraction2 << endl;
+    cout << bitStr1 << endl;
+    cout << bitStr2 << endl;
 
     // Демонстрация виртуального сложения
     cout << "\n=== Сложение через указатели на базовый класс ===\n";
@@ -278,41 +308,50 @@ int main() {
     // Сложение объектов одного типа
     cout << "\n1. Сложение Array + Array:\n";
     Array sumArray = *arrays[0] + *arrays[1];
-    sumArray.display();
+    cout << sumArray << endl;
 
     cout << "\n2. Сложение Fraction + Fraction:\n";
     Array sumFraction = *arrays[2] + *arrays[3];
-    sumFraction.display();
+    cout << sumFraction << endl;
 
     cout << "\n3. Сложение BitString + BitString:\n";
     Array sumBitString = *arrays[4] + *arrays[5];
-    sumBitString.display();
+    cout << sumBitString << endl;
 
     // Попытка сложения разных типов (вызовет ошибку)
     cout << "\n4. Попытка сложения разных типов (Array + Fraction):\n";
     Array wrongSum = *arrays[0] + *arrays[2];
-    wrongSum.display();
+    cout << wrongSum << endl;
 
     // Массив указателей на базовый класс
     cout << "\n=== Работа с массивом указателей ===\n";
     for (int i = 0; i < 6; i++) {
-        cout << "Элемент " << i << ": ";
-        arrays[i]->display();
+        cout << "Элемент " << i << ": " << *arrays[i] << endl;
     }
 
     // Демонстрация полиморфизма
     cout << "\n=== Полиморфное поведение ===\n";
     Array* polyArray = &bitStr1;
-    cout << "Вызов display() через указатель Array* на BitString:\n";
-    polyArray->display();
+    cout << "Вызов оператора << через указатель Array* на BitString:\n";
+    cout << *polyArray << endl; // Выведет как Array (без двоичной специфики)
 
     // Динамическое создание объектов
     cout << "\n=== Динамическое создание объектов ===\n";
     Array* dynArray = new Fraction(3, 1, false, 7);
-    dynArray->display();
+    cout << *dynArray << endl;
     
     Array* dynBitString = new BitString(5, 1);
-    dynBitString->display();
+    cout << *dynBitString << endl;
+
+    // Для корректного вывода нужно явное приведение
+    cout << "\n=== Явное приведение типов для правильного вывода ===\n";
+    if (Fraction* fracPtr = dynamic_cast<Fraction*>(dynArray)) {
+        cout << "Fraction: " << *fracPtr << endl;
+    }
+    
+    if (BitString* bitPtr = dynamic_cast<BitString*>(dynBitString)) {
+        cout << "BitString: " << *bitPtr << endl;
+    }
 
     // Проверка работы оператора []
     cout << "\n=== Проверка оператора индексирования ===\n";
