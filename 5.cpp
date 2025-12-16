@@ -30,6 +30,18 @@ public:
         delete[] brand;
     }
 
+    // Оператор присваивания
+    Car& operator=(const Car& other) {
+        if (this != &other) {
+            delete[] brand;
+            cylinders = other.cylinders;
+            power = other.power;
+            brand = new char[strlen(other.brand) + 1];
+            strcpy(brand, other.brand);
+        }
+        return *this;
+    }
+
     // Методы доступа
     const char* getBrand() const { return brand; }
     int getCylinders() const { return cylinders; }
@@ -44,13 +56,6 @@ public:
         }
     }
 
-    // Вывод информации
-    virtual void display() const {
-        cout << "Марка: " << brand 
-             << ", Цилиндров: " << cylinders 
-             << ", Мощность: " << power << " л.с.\n";
-    }
-
     // Преобразование в строку
     virtual char* toString() const {
         char* buffer = new char[100];
@@ -58,7 +63,18 @@ public:
                 brand, cylinders, power);
         return buffer;
     }
+
+    // Дружественная функция для перегрузки оператора вывода
+    friend ostream& operator<<(ostream& os, const Car& car);
 };
+
+// Перегрузка оператора вывода для Car
+ostream& operator<<(ostream& os, const Car& car) {
+    os << "Марка: " << car.brand 
+       << ", Цилиндров: " << car.cylinders 
+       << ", Мощность: " << car.power << " л.с.";
+    return os;
+}
 
 class Lorry : public Car {
 private:
@@ -72,6 +88,15 @@ public:
         : Car(br, cyl, pwr), loadCapacity(load) {}
 
     Lorry(const Lorry& other) : Car(other), loadCapacity(other.loadCapacity) {}
+
+    // Оператор присваивания
+    Lorry& operator=(const Lorry& other) {
+        if (this != &other) {
+            Car::operator=(other);
+            loadCapacity = other.loadCapacity;
+        }
+        return *this;
+    }
 
     // Методы доступа
     int getLoadCapacity() const { return loadCapacity; }
@@ -92,14 +117,6 @@ public:
         }
     }
 
-    // Вывод информации
-    void display() const override {
-        cout << "Марка: " << brand 
-             << ", Цилиндров: " << cylinders 
-             << ", Мощность: " << power << " л.с."
-             << ", Грузоподъемность: " << loadCapacity << " кг\n";
-    }
-
     // Преобразование в строку
     char* toString() const override {
         char* buffer = new char[150];
@@ -107,7 +124,17 @@ public:
                 brand, cylinders, power, loadCapacity);
         return buffer;
     }
+
+    // Дружественная функция для перегрузки оператора вывода
+    friend ostream& operator<<(ostream& os, const Lorry& lorry);
 };
+
+// Перегрузка оператора вывода для Lorry
+ostream& operator<<(ostream& os, const Lorry& lorry) {
+    os << static_cast<const Car&>(lorry)
+       << ", Грузоподъемность: " << lorry.loadCapacity << " кг";
+    return os;
+}
 
 int main() {
     // Создание объектов
@@ -115,32 +142,32 @@ int main() {
     Lorry lorry1("Kamaz", 8, 300, 15000);
     Lorry lorry2("GAZ", 6, 200, 8000);
 
-    // Демонстрация методов базового класса
+    // Демонстрация оператора вывода
     cout << "=== Информация о машинах ===\n";
-    car1.display();
-    lorry1.display();
-    lorry2.display();
+    cout << car1 << endl;
+    cout << lorry1 << endl;
+    cout << lorry2 << endl;
 
     // Демонстрация изменения мощности
     car1.setPower(180);
     cout << "\nПосле изменения мощности Toyota:\n";
-    car1.display();
+    cout << car1 << endl;
 
     // Демонстрация изменения грузоподъемности
     lorry1.setLoadCapacity(20000);
     cout << "\nПосле изменения грузоподъемности Kamaz:\n";
-    lorry1.display();
+    cout << lorry1 << endl;
 
     // Демонстрация изменения марки
     lorry2.setBrand("Урал");
     cout << "\nПосле изменения марки GAZ:\n";
-    lorry2.display();
+    cout << lorry2 << endl;
 
     // Принцип подстановки
     cout << "\n=== Принцип подстановки ===\n";
     Car* carPtr = &lorry1;
-    cout << "Вызов display() через указатель Car* на Lorry:\n";
-    carPtr->display();
+    cout << "Вызов оператора << через указатель Car* на Lorry:\n";
+    cout << *carPtr << endl;  // Выведет только информацию Car (без грузоподъемности)
 
     // Массив объектов
     cout << "\n=== Массив машин ===\n";
@@ -150,7 +177,7 @@ int main() {
     garage[2] = new Car("Audi", 4, 180);
 
     for (int i = 0; i < 3; i++) {
-        garage[i]->display();
+        cout << *garage[i] << endl;
     }
 
     // Преобразование в строку
